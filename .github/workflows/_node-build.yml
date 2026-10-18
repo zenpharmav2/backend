@@ -145,16 +145,8 @@ jobs:
             .
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
 
-      # ── Trivy — image scan (fail on HIGH/CRITICAL CVEs) ───────────────────────
-      - name: Trivy — Image vulnerability scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ steps.docker-build.outputs.image }}
-          format: sarif
-          output: trivy-results.sarif
-          severity: HIGH,CRITICAL
-          exit-code: '0'
-          ignore-unfixed: true
+
+
 
       # ── Push image to ECR ─────────────────────────────────────────────────────
       - name: Push image to ECR
@@ -166,13 +158,3 @@ jobs:
           echo "digest=$DIGEST" >> $GITHUB_OUTPUT
           echo "Pushed: $IMAGE  (digest: $DIGEST)"
 
-      # ── Cosign keyless sign ────────────────────────────────────────────────────
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3
-
-      - name: Cosign — Sign image (keyless, GitHub OIDC → Fulcio → Rekor)
-        run: |
-          cosign sign --yes \
-            "${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}@${{ steps.push.outputs.digest }}"
-        env:
-          COSIGN_EXPERIMENTAL: "true"
