@@ -95,31 +95,6 @@ jobs:
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
 
-
-      # ── OWASP Dependency Check ────────────────────────────────────────────────
-      # Optional repo secret NVD_API_KEY — higher NVD rate limits; see CI-ARCHITECTURE.md
-      - name: Cache OWASP NVD database
-        if: false 
-        uses: actions/cache@v4
-        with:
-          path: ~/.owasp/dependency-check-data
-          key: owasp-nvd-${{ runner.os }}-${{ hashFiles(format('{0}/pom.xml', inputs.service-dir)) }}
-          restore-keys: owasp-nvd-${{ runner.os }}-
-
-      - name: OWASP Dependency Check (CVSS ≥ 7.0 — advisory; non-blocking)
-        if: false
-        continue-on-error: true
-        run: |
-          cd ${{ inputs.service-dir }}
-          mvn org.owasp:dependency-check-maven:check \
-            -DfailBuildOnCVSS=7 \
-            -DenableRetired=true \
-            #    -DnvdApiKey=${{ secrets.NVD_API_KEY }} \
-            #    -DnvdApiDelay=1000 \
-            -DdataDirectory=$HOME/.owasp/dependency-check-data \
-            -Dformat=HTML \
-            --no-transfer-progress
-
       - name: Upload Dependency Check report
         if: false
      #   if: always()

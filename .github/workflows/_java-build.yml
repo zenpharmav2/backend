@@ -134,35 +134,6 @@ jobs:
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
 
-      - name: Cache OWASP NVD database
-        if: false
-        uses: actions/cache@v4
-        with:
-          path: ~/.owasp/dependency-check-data
-          key: owasp-nvd-${{ runner.os }}-${{ hashFiles(format('{0}/pom.xml', inputs.service-dir)) }}
-          restore-keys: owasp-nvd-${{ runner.os }}-
-
-      - name: OWASP Dependency Check (CVSS ≥ 7.0 — advisory; non-blocking)
-        if: false
-        continue-on-error: true
-        run: |
-          cd ${{ inputs.service-dir }}
-          mvn org.owasp:dependency-check-maven:check \
-            -DfailBuildOnCVSS=7 \
-            -DenableRetired=true \
-            -DdataDirectory=$HOME/.owasp/dependency-check-data \
-            -Dformat=HTML \
-            --no-transfer-progress
-        env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-
-      - name: Upload Dependency Check report
-        if: false
-        uses: actions/upload-artifact@v6
-        with:
-          name: depcheck-${{ inputs.service-name }}
-          path: ${{ inputs.service-dir }}/target/dependency-check-report.html
-          retention-days: 14
 
       # ── AWS & ECR ──────────────────────────────────────────────────────────────
       - name: "🔑 Configure AWS credentials (OIDC)"
@@ -211,18 +182,7 @@ jobs:
           echo "digest=$DIGEST" >> $GITHUB_OUTPUT
           echo "Pushed: $IMAGE  (digest: $DIGEST)"
 
-      # ── Cosign keyless sign ────────────────────────────────────────────────────
-      # GitHub OIDC token → Fulcio CA issues short-lived cert → Rekor audit log entry
-      # No long-lived signing keys. Kyverno policy in EKS verifies signature at admission.
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3
 
-      - name: "✍️ Cosign — sign image (keyless OIDC)"
-        run: |
-          cosign sign --yes \
-            "${{ steps.login-ecr.outputs.registry }}/${{ inputs.ecr-repository }}@${{ steps.push.outputs.digest }}"
-        env:
-          COSIGN_EXPERIMENTAL: "true"
 
       # ── Summary ──────────────────────────────────────────────────────────────
       - name: "📋 Build Summary"
